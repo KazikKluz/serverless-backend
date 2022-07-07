@@ -14,8 +14,16 @@ module.exports = {
       ContentType: 'text/csv',
     };
 
+    const getSignedUrl = async () => {
+      return new Promise((resolve, reject) => {
+        s3.getSignedUrl('putObject', params, (err, url) => {
+          err ? reject(err) : resolve(url);
+        });
+      });
+    };
+
     try {
-      const signedUrl = s3.getSignedUrl('putObject', params);
+      const signedUrl = await getSignedUrl();
 
       return responseHelper(200, { signedUrl });
     } catch (err) {
@@ -25,6 +33,7 @@ module.exports = {
 
   importFileParser: async function (event) {
     const s3 = new AWS.S3({ region: 'eu-west-1' });
+    const sqs = new AWS.SQS();
 
     try {
       for (const file of event.Records) {
@@ -37,7 +46,22 @@ module.exports = {
         await new Promise((resolve, reject) => {
           s3Stream
             .pipe(csv())
-            .on('data', (record) => console.log(record))
+            .on('data', (record) => {
+              sqs.sendMessage(
+                {
+                  QueueUrl: process.env.SQS_URL,
+                  MessageBody: record,
+                },
+                (err, result) => {
+                  if (err) {
+                    console.error(
+                      `Error while sending message to the queue: ${err}`
+                    );
+                  }
+                  console.log(`Message sent without issues`);
+                }
+              );
+            })
             .on('error', (err) => reject(err))
             .on('end', async () => {
               console.log('file succesfully parsed');
@@ -72,5 +96,9 @@ module.exports = {
         'Error while executing importFileParser lambda'
       );
     }
+  },
+
+  catalogBatchProcess: async function (event) {
+    console.log(`catalogBatchProcess lambda called: ${event}`);
   },
 };
