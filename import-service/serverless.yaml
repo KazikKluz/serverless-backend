@@ -11,6 +11,8 @@ provider:
   environment:
     SQS_URL:
       Ref: SQSQueue
+    SNS_ARN:
+      Ref: SNSTopic
 
   iamRoleStatements:
     - Effect: 'Allow'
@@ -26,6 +28,10 @@ provider:
       Action: 'sqs:*'
       Resource:
         - Fn::GetAtt: [SQSQueue, Arn]
+    - Effect: 'Allow'
+      Action: 'sns:*'
+      Resource:
+        Ref: SNSTopic
 
 resources:
   Resources:
@@ -33,10 +39,23 @@ resources:
       Type: AWS::SQS::Queue
       Properties:
         QueueName: queue-task6
+    SNSTopic:
+      Type: AWS::SNS::Topic
+      Properties:
+        TopicName: task6-topic
+    SNSSubscription:
+      Type: AWS::SNS::Subscription
+      Properties:
+        Endpoint: kazucha80@gmail.com
+        Protocol: email
+        TopicArn:
+          Ref: SNSTopic
 
 functions:
   importProductsFile:
     handler: handler.importProductsFile
+    environment:
+      S3_BUCKET: bucket-task5
     events:
       - http:
           path: import
@@ -47,6 +66,8 @@ functions:
                 name: true
   importFileParser:
     handler: handler.importFileParser
+    environment:
+      S3_BUCKET: bucket-task5
     events:
       - s3:
           bucket: bucket-task5

@@ -1,6 +1,8 @@
 const AWS = require('aws-sdk');
 const { responseHelper } = require('./responseHelper');
 const csv = require('csv-parser');
+const axios = require('axios');
+
 const { S3_BUCKET } = process.env;
 
 module.exports = {
@@ -27,7 +29,8 @@ module.exports = {
 
       return responseHelper(200, { signedUrl });
     } catch (err) {
-      return responseHelper(500, 'Error while retrieving signedUrl from AWS');
+      console.error(err);
+      return responseHelper(500, `Error while retrieving signedUrl from AWS`);
     }
   },
 
@@ -50,11 +53,11 @@ module.exports = {
               sqs.sendMessage(
                 {
                   QueueUrl: process.env.SQS_URL,
-                  MessageBody: record,
+                  MessageBody: JSON.stringify(record),
                 },
                 (err, result) => {
                   if (err) {
-                    console.error(
+                    return console.error(
                       `Error while sending message to the queue: ${err}`
                     );
                   }
@@ -99,6 +102,38 @@ module.exports = {
   },
 
   catalogBatchProcess: async function (event) {
-    console.log(`catalogBatchProcess lambda called: ${event}`);
+    const sns = new AWS.SNS({ region: 'eu-west-1' });
+    for (const message of event.Records) {
+      try {
+        const response = await axios.post(
+          `https://mf8eqk4xtj.execute-api.eu-west-1.amazonaws.com/dev/products`,
+          message.body,
+          {
+            headers: {
+              'Access-Control-Allow-Headers': 'Content-Type',
+              'Access-Control-Allow-Origin': '*',
+              'Access-Control-Allow-Methods': 'OPTIONS,POST,GET',
+            },
+          }
+        );
+        if (response.status == 200) {
+          const { title, description, price, count } = message.body;
+          sns.publish(
+            {
+              Subject: 'New record added',
+              Message: `${title}, ${description}, price: ${price}, count: ${count}`,
+              TopicArn: process.env.SNS_ARN,
+            },
+            (err) => {
+              if (err) {
+                console.error('Notification of creation new record failed');
+              }
+            }
+          );
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
   },
 };

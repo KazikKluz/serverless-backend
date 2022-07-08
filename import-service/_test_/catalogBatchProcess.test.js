@@ -1,10 +1,9 @@
 const AWSMock = require('aws-sdk-mock');
 const { importProductsFile } = require('../handler');
-const testUrl = 'productsRecords.csv';
 
-describe('testing importProductsFile', () => {
+describe('testing catalogBatchProcess', () => {
   afterEach(() => {
-    AWSMock.restore('S3');
+    AWSMock.restore('SNS');
   });
 
   it('Should work correctly', async () => {
