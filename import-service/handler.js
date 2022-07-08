@@ -13,13 +13,20 @@ module.exports = {
       Expires: 60,
       ContentType: 'text/csv',
     };
+    
+    const getSignedUrl = async () => {
+      return new Promise((resolve, reject) => {
+        s3.getSignedUrl('putObject', params, (err, url) => {
+          err ? reject(err) : resolve(url);
+        });
+      });
+    };
 
     try {
-      const signedUrl = s3.getSignedUrl('putObject', params);
-
+      const signedUrl = await getSignedUrl();
       return responseHelper(200, { signedUrl });
     } catch (err) {
-      return responseHelper(500, 'Error while retrieving signedUrl from AWS');
+      return responseHelper(500, `Error while retrieving signedUrl from AWS`);
     }
   },
 
