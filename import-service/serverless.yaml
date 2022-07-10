@@ -42,12 +42,22 @@ resources:
     SNSTopic:
       Type: AWS::SNS::Topic
       Properties:
-        TopicName: task6-topic
+        TopicName: createProductTopic
     SNSSubscription:
       Type: AWS::SNS::Subscription
       Properties:
         Endpoint: kazucha80@gmail.com
         Protocol: email
+        TopicArn:
+          Ref: SNSTopic
+    SNSSubscriptionSpeakers:
+      Type: AWS::SNS::Subscription
+      Properties:
+        Endpoint: kazik.kluz@gmail.com
+        Protocol: email
+        FilterPolicy:
+          is_speakers:
+            - 'yes'
         TopicArn:
           Ref: SNSTopic
 

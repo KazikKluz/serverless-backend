@@ -117,12 +117,20 @@ module.exports = {
           }
         );
         if (response.status == 200) {
-          const { title, description, price, count } = message.body;
+          const product = JSON.parse(message.body);
           sns.publish(
             {
               Subject: 'New record added',
-              Message: `${title}, ${description}, price: ${price}, count: ${count}`,
+              Message: `${product.title}, ${product.description}, price: ${product.price}, count: ${product.count}`,
               TopicArn: process.env.SNS_ARN,
+              MessageAttributes: {
+                is_speakers: {
+                  DataType: 'String',
+                  StringValue: product.title.includes('Speakers')
+                    ? 'yes'
+                    : 'no',
+                },
+              },
             },
             (err) => {
               if (err) {
