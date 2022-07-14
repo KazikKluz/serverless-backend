@@ -1,6 +1,8 @@
 const AWS = require('aws-sdk');
 const { responseHelper } = require('./responseHelper');
 const csv = require('csv-parser');
+const axios = require('axios');
+
 const { S3_BUCKET } = process.env;
 
 module.exports = {
@@ -13,7 +15,7 @@ module.exports = {
       Expires: 60,
       ContentType: 'text/csv',
     };
-    
+
     const getSignedUrl = async () => {
       return new Promise((resolve, reject) => {
         s3.getSignedUrl('putObject', params, (err, url) => {
@@ -24,14 +26,17 @@ module.exports = {
 
     try {
       const signedUrl = await getSignedUrl();
+
       return responseHelper(200, { signedUrl });
     } catch (err) {
+      console.error(err);
       return responseHelper(500, `Error while retrieving signedUrl from AWS`);
     }
   },
 
   importFileParser: async function (event) {
     const s3 = new AWS.S3({ region: 'eu-west-1' });
+    const sqs = new AWS.SQS();
 
     try {
       for (const file of event.Records) {
@@ -44,7 +49,22 @@ module.exports = {
         await new Promise((resolve, reject) => {
           s3Stream
             .pipe(csv())
-            .on('data', (record) => console.log(record))
+            .on('data', (record) => {
+              sqs.sendMessage(
+                {
+                  QueueUrl: process.env.SQS_URL,
+                  MessageBody: JSON.stringify(record),
+                },
+                (err, result) => {
+                  if (err) {
+                    return console.error(
+                      `Error while sending message to the queue: ${err}`
+                    );
+                  }
+                  console.log(`Message sent without issues`);
+                }
+              );
+            })
             .on('error', (err) => reject(err))
             .on('end', async () => {
               console.log('file succesfully parsed');
@@ -78,6 +98,50 @@ module.exports = {
         500,
         'Error while executing importFileParser lambda'
       );
+    }
+  },
+
+  catalogBatchProcess: async function (event) {
+    const sns = new AWS.SNS({ region: 'eu-west-1' });
+    for (const message of event.Records) {
+      try {
+        const response = await axios.post(
+          `https://mf8eqk4xtj.execute-api.eu-west-1.amazonaws.com/dev/products`,
+          message.body,
+          {
+            headers: {
+              'Access-Control-Allow-Headers': 'Content-Type',
+              'Access-Control-Allow-Origin': '*',
+              'Access-Control-Allow-Methods': 'OPTIONS,POST,GET',
+            },
+          }
+        );
+        if (response.status == 200) {
+          const product = JSON.parse(message.body);
+          sns.publish(
+            {
+              Subject: 'New record added',
+              Message: `${product.title}, ${product.description}, price: ${product.price}, count: ${product.count}`,
+              TopicArn: process.env.SNS_ARN,
+              MessageAttributes: {
+                is_speakers: {
+                  DataType: 'String',
+                  StringValue: product.title.includes('Speakers')
+                    ? 'yes'
+                    : 'no',
+                },
+              },
+            },
+            (err) => {
+              if (err) {
+                console.error('Notification of creation new record failed');
+              }
+            }
+          );
+        }
+      } catch (err) {
+        console.error(err);
+      }
     }
   },
 };
