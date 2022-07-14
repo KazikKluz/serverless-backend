@@ -10,7 +10,7 @@ function validateProduct(productData) {
     console.log('validateProduct(): Parameter is null');
   }
 
-  //validate data for new product fields
+  //validate data for all new product fields
   if (
     !validator.isEmpty(productData.title) &&
     (validator.isNumeric(productData.price + '', {
