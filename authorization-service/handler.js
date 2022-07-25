@@ -12,7 +12,7 @@ module.exports = {
       const authorization_token = event.authorizationToken.substring(6);
 
       const buff = Buffer.from(authorization_token, 'base64');
-      const plainCreds = buff.toString('utf-8').split('=');
+      const plainCreds = buff.toString('utf-8').split(':');
       const username = plainCreds[0];
       const password = plainCreds[1];
 
