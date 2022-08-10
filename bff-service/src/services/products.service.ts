@@ -1,29 +1,28 @@
-import axios from 'axios';
+import { AxiosResponse } from 'axios';
 import { Injectable } from '@nestjs/common';
 import { Product } from '../interfaces/product.interface';
 import { CreateProductDto } from '../dtos/create-product.dto';
+import { HttpService } from '@nestjs/axios';
+import { Observable, map } from 'rxjs';
 
 @Injectable()
 export class ProductsService {
-  async findAll(): Promise<Product[]> {
-    const result = await axios
+  constructor(private readonly httpService: HttpService) {}
+  findAll(): Observable<AxiosResponse<Product[]>> {
+    return this.httpService
       .get(`${process.env.PRODUCTS}`)
-      .then((res) => res.data);
-
-    return result;
+      .pipe(map((response) => response.data));
   }
 
-  async findOne(id: string): Promise<Product> {
-    const result = await axios
+  findOne(id: string): Observable<AxiosResponse<Product>> {
+    return this.httpService
       .get(`${process.env.PRODUCTS}/${id}`)
-      .then((res) => res.data);
-    return result;
+      .pipe(map((response) => response.data));
   }
 
-  async insertOne(product: CreateProductDto): Promise<[]> {
-    const result = await axios
+  insertOne(product: CreateProductDto): Observable<AxiosResponse<[]>> {
+    return this.httpService
       .post(`${process.env.PRODUCTS}`, product)
-      .then((res) => res.data);
-    return result;
+      .pipe(map((response) => response.data));
   }
 }
