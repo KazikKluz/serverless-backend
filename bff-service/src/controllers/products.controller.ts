@@ -6,7 +6,7 @@ import {
   Header,
   Param,
   Post,
-  UseFilters,
+  Query,
   UseInterceptors,
 } from '@nestjs/common';
 import { Product } from '../interfaces/product.interface';
@@ -21,8 +21,13 @@ export class ProductsController {
   constructor(private productsService: ProductsService) {}
   @Get()
   @Header('Access-Control-Allow-Origin', '*')
-  findAll(): Observable<AxiosResponse<Product[]>> {
-    return this.productsService.findAll();
+  find(@Query() query): Observable<AxiosResponse<Product[] | Product>> {
+    if (query.productId) {
+      console.log(query);
+      return this.productsService.findOne(query.productId);
+    } else {
+      return this.productsService.findAll();
+    }
   }
 
   @Get(':id')
