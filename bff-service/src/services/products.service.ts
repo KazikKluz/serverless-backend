@@ -9,6 +9,7 @@ import { Observable, map } from 'rxjs';
 export class ProductsService {
   constructor(private readonly httpService: HttpService) {}
   findAll(): Observable<AxiosResponse<Product[]>> {
+    console.log('inside product service before axios call');
     return this.httpService
       .get(`${process.env.PRODUCTS}`)
       .pipe(map((response) => response.data));
