@@ -40,11 +40,14 @@ module.exports.getProductsList = async () => {
 
   try {
     const { rows: products } = await client.query(`
-        SELECT p.id, p.title, p.description, p.price, s.count
+        SELECT p.id, p.title, p.description, p.price, s.count, i.imageUrl
         FROM products AS p
         INNER JOIN 
-        stocks AS s
-        ON p.id = s.product_id;
+        stocks AS s 
+        ON p.id = s.product_id
+       	INNER JOIN
+       	images AS i
+       	ON p.id = i.product_id 
     `);
     return responseHelper(200, products);
   } catch (err) {
@@ -82,6 +85,9 @@ module.exports.getProductsById = async (event) => {
         INNER JOIN 
         stocks AS s
         ON p.id = s.product_id
+        INNER JOIN
+       	images AS i
+       	ON p.id = i.product_id 
         WHERE p.id = $1;
     `,
       [id]
@@ -141,6 +147,14 @@ module.exports.postProducts = async (event) => {
           VALUES($1, $2)
       `,
         [newProduct.id, validatedProduct.count]
+      );
+
+      await client.query(
+        `
+          INSERT INTO images(product_id, imageurl)
+          VALUES($1, $2)
+      `,
+        [newProduct.id, validatedProduct.imageurl]
       );
 
       await client.query('COMMIT');
