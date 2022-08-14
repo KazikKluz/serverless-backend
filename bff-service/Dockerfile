@@ -27,6 +27,8 @@ COPY --from=build /app/dist ./dist
 
 USER node
 #expose ports from the image
+ENV PRODUCTS=https://mf8eqk4xtj.execute-api.eu-west-1.amazonaws.com/dev/products
+ENV CART=http://kazikkluz-cart-api-devel.eu-west-1.elasticbeanstalk.com/api/profile/cart
 ENV PORT=8080
 EXPOSE 8080
 #start application with command node dist/index.js

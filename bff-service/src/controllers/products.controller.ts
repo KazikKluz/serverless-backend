@@ -22,7 +22,6 @@ export class ProductsController {
   @Get()
   @Header('Access-Control-Allow-Origin', '*')
   find(@Query() query): Observable<AxiosResponse<Product[] | Product>> {
-    console.log('inside products controller before calling service');
     if (query.productId) {
       return this.productsService.findOne(query.productId);
     } else {
