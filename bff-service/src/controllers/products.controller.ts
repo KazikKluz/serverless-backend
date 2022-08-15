@@ -4,7 +4,6 @@ import {
   Controller,
   Get,
   Header,
-  Param,
   Post,
   Query,
   UseInterceptors,
@@ -12,7 +11,6 @@ import {
 import { Product } from '../interfaces/product.interface';
 import { ProductsService } from '../services/products.service';
 import { CreateProductDto } from '../dtos/create-product.dto';
-import { Observable } from 'rxjs';
 import { AxiosResponse } from 'axios';
 
 @Controller('products')
@@ -21,7 +19,7 @@ export class ProductsController {
   constructor(private productsService: ProductsService) {}
   @Get()
   @Header('Access-Control-Allow-Origin', '*')
-  find(@Query() query): Observable<AxiosResponse<Product[] | Product>> {
+  find(@Query() query): Promise<AxiosResponse<Product[] | Product>> {
     if (query.productId) {
       return this.productsService.findOne(query.productId);
     } else {
@@ -29,17 +27,9 @@ export class ProductsController {
     }
   }
 
-  @Get(':id')
-  @Header('Access-Control-Allow-Origin', '*')
-  findOne(@Param('id') id: string): Observable<AxiosResponse<Product>> {
-    return this.productsService.findOne(id);
-  }
-
   @Post()
   @Header('Access-Control-Allow-Origin', '*')
-  create(
-    @Body() createProductDto: CreateProductDto,
-  ): Observable<AxiosResponse<[]>> {
-    return this.productsService.insertOne(createProductDto);
+  create(@Body() product: CreateProductDto): Promise<AxiosResponse<[]>> {
+    return this.productsService.insertOne(product);
   }
 }
