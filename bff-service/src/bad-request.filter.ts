@@ -3,11 +3,12 @@ import {
   ArgumentsHost,
   HttpException,
   Catch,
+  NotFoundException
 } from '@nestjs/common';
 
-import { Response, Request } from 'express';
+import { Response} from 'express';
 
-@Catch(HttpException)
+@Catch(NotFoundException)
 export class BadRequestFilter implements ExceptionFilter {
   catch(exception: HttpException, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
