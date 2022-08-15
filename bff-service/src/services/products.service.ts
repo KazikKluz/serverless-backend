@@ -1,28 +1,42 @@
 import { AxiosResponse } from 'axios';
-import { Injectable } from '@nestjs/common';
+import { Injectable, HttpException } from '@nestjs/common';
 import { Product } from '../interfaces/product.interface';
-import { CreateProductDto } from '../dtos/create-product.dto';
 import { HttpService } from '@nestjs/axios';
-import { Observable, map } from 'rxjs';
+import { CreateProductDto } from 'src/dtos/create-product.dto';
 
 @Injectable()
 export class ProductsService {
   constructor(private readonly httpService: HttpService) {}
-  findAll(): Observable<AxiosResponse<Product[]>> {
-    return this.httpService
-      .get(`${process.env.PRODUCTS}`)
-      .pipe(map((response) => response.data));
+  async findAll(): Promise<AxiosResponse<Product[]>> {
+    try {
+      const data = await this.httpService.axiosRef
+        .get(`${process.env.PRODUCTS}`)
+        .then((response) => response.data);
+      return data;
+    } catch (error) {
+      throw new HttpException(error.response.data, error.response.status);
+    }
   }
 
-  findOne(id: string): Observable<AxiosResponse<Product>> {
-    return this.httpService
-      .get(`${process.env.PRODUCTS}/${id}`)
-      .pipe(map((response) => response.data));
+  async findOne(id: string): Promise<AxiosResponse<Product>> {
+    try {
+      const data = await this.httpService.axiosRef
+        .get(`${process.env.PRODUCTS}/${id}`)
+        .then((response) => response.data);
+      return data;
+    } catch (error) {
+      throw new HttpException(error.response.data, error.response.status);
+    }
   }
 
-  insertOne(product: CreateProductDto): Observable<AxiosResponse<[]>> {
-    return this.httpService
-      .post(`${process.env.PRODUCTS}`, product)
-      .pipe(map((response) => response.data));
+  async insertOne(product: CreateProductDto): Promise<AxiosResponse<[]>> {
+    try {
+      const data = await this.httpService.axiosRef
+        .post(`${process.env.PRODUCTS}`, product)
+        .then((response) => response.data);
+      return data;
+    } catch (error) {
+      throw new HttpException(error.response.data, error.response.status);
+    }
   }
 }
