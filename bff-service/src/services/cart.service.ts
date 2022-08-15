@@ -1,21 +1,30 @@
 import { AxiosResponse } from 'axios';
-import { Injectable } from '@nestjs/common';
+import { Injectable, HttpException } from '@nestjs/common';
 import { Cart, CartItem } from 'src/interfaces/cart.interface';
 import { HttpService } from '@nestjs/axios';
-import { Observable, map } from 'rxjs';
 
 @Injectable()
 export class CartService {
   constructor(private readonly httpService: HttpService) {}
-  findOne(): Observable<AxiosResponse<Cart>> {
-    return this.httpService
-      .get(`${process.env.CART}`)
-      .pipe(map((response) => response.data));
+  async findOne(): Promise<AxiosResponse<Cart>> {
+    try {
+      const data = await this.httpService.axiosRef
+        .get(`${process.env.CART}`)
+        .then((response) => response.data);
+      return data;
+    } catch (error) {
+      throw new HttpException(error.response.data, error.response.status);
+    }
   }
 
-  put(cartItems: CartItem[]): Observable<AxiosResponse<Cart>> {
-    return this.httpService
-      .put(`${process.env.CART}`, cartItems)
-      .pipe(map((response) => response.data));
+  put(cartItems: CartItem[]): Promise<AxiosResponse<Cart>> {
+    try {
+      const data = this.httpService.axiosRef
+        .put(`${process.env.CART}`, cartItems)
+        .then((response) => response.data);
+      return data;
+    } catch (error) {
+      throw new HttpException(error.response.data, error.response.status);
+    }
   }
 }
